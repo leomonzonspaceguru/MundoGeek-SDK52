@@ -1,36 +1,45 @@
-import * as SQLite from 'expo-sqlite/legacy';
+import * as SQLite from 'expo-sqlite';
 
-const db = SQLite.openDatabase("mundogeek.db")
+
+const db = SQLite.openDatabaseSync("mundogeek.db")
 
 export const createSessionsTable = () => {
-    const promise = new Promise((resolved,rejected)=>{
-        const query = 'CREATE TABLE IF NOT EXISTS sessions (localId TEXT PRIMARY KEY NOT NULL, email TEXT NOT NULL, token TEXT NOT NULL  ) '
-        db.transaction(tx=>tx.executeSql(query,[],(_,result)=>resolved(result),(_,result)=>rejected(result)))
-    })
-    return promise
+    return new Promise((resolve, reject) => {
+        db.execAsync(`
+            CREATE TABLE IF NOT EXISTS sessions (
+                localId TEXT PRIMARY KEY NOT NULL, 
+                email TEXT NOT NULL, 
+                token TEXT NOT NULL
+            )
+        `)
+        .then(resolve)
+        .catch(reject);
+    });
 }
 
 export const insertSession = ({email, localId, token}) => {
-    const promise = new Promise((resolved,rejected)=>{
-        const query = 'INSERT INTO sessions (email, localId, token) VALUES (?,?,?)'
-        db.transaction(tx=>tx.executeSql(query,[email,localId, token],(_,result)=>resolved(result),(_,result)=>rejected(result)))
-    })
-    return promise
+    return new Promise((resolve, reject) => {
+        db.runAsync(
+            'INSERT INTO sessions (email, localId, token) VALUES (?, ?, ?)',
+            [email, localId, token]
+        )
+        .then(resolve)
+        .catch(reject);
+    });
 }
 
 export const fetchSession = () => {
-    const promise = new Promise((resolved,rejected)=>{
-        const query = 'SELECT * FROM sessions'
-        db.transaction(tx=>tx.executeSql(query,[],(_,result)=>resolved(result.rows._array),(_,result)=>rejected(result)))
-    })
-    return promise
+    return new Promise((resolve, reject) => {
+        db.getAllAsync('SELECT * FROM sessions')
+        .then(resolve)
+        .catch(reject);
+    });
 }
 
-//FUNCION PELIGROSA:
-export const clearSessions= () => {
-    const promise = new Promise((resolved,rejected)=>{
-        const query = "DELETE FROM sessions" 
-        db.transaction(tx=>{tx.executeSql(query,[],(_, result)=>resolved(result),(_,error)=>rejected(error))})
-    })
-    return promise
+export const clearSessions = () => {
+    return new Promise((resolve, reject) => {
+        db.runAsync('DELETE FROM sessions')
+        .then(resolve)
+        .catch(reject);
+    });
 }
